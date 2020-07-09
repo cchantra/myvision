@@ -224,7 +224,10 @@ public final class LivePreviewActivity extends AppCompatActivity
     private void createCameraSource(String model) {
         // If there's no existing cameraSource, create one.
         if (cameraSource == null) {
-            cameraSource = new CameraSource(this, graphicOverlay);
+
+
+            cameraSource  = new CameraSource(this, graphicOverlay);
+
         }
 
         try {
@@ -288,6 +291,8 @@ public final class LivePreviewActivity extends AppCompatActivity
                                     .build();
                     CustomImageLabelerOptions customImageLabelerOptions =
                             new CustomImageLabelerOptions.Builder(localClassifier).build();
+
+
                     cameraSource.setMachineLearningFrameProcessor(
                             new LabelDetectorProcessor(this, customImageLabelerOptions));
                     break;
@@ -358,6 +363,7 @@ public final class LivePreviewActivity extends AppCompatActivity
                                             .build();
                             CustomImageLabelerOptions customImageLabelerOptions2 =
                                     new CustomImageLabelerOptions.Builder(localClassifier_gender).build();
+
                             cameraSource.setMachineLearningFrameProcessor(
                                     new LabelDetectorProcessor(currentContext, customImageLabelerOptions2,email[0]));
                         }

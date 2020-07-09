@@ -23,14 +23,13 @@ import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.Task;
 import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.demo.AsyncResponse;
 import com.google.mlkit.vision.demo.GraphicOverlay;
 import com.google.mlkit.vision.demo.VisionProcessorBase;
+import com.google.mlkit.vision.demo.constantString;
 import com.google.mlkit.vision.label.ImageLabel;
 import com.google.mlkit.vision.label.ImageLabeler;
 import com.google.mlkit.vision.label.ImageLabelerOptionsBase;
 import com.google.mlkit.vision.label.ImageLabeling;
-import com.google.mlkit.vision.label.custom.CustomImageLabelerOptions;
 
 import java.io.IOException;
 import java.util.List;
@@ -38,13 +37,24 @@ import java.util.List;
 /**
  * Custom InputImage Classifier Demo.
  */
+
+enum model_option {
+    AGE,
+    EXP,
+    GENER,
+    FACE
+}
+
 public class LabelDetectorProcessor extends VisionProcessorBase<List<ImageLabel>> {
 
     private static final String TAG = "LabelDetectorProcessor";
 
     private final ImageLabeler imageLabeler;
 
+
     private String testStr = "...Test";
+    private model_option modelOption = model_option.AGE;
+
     public LabelDetectorProcessor(Context context, ImageLabelerOptionsBase options) {
         super(context);
         imageLabeler = ImageLabeling.getClient(options);
@@ -56,6 +66,11 @@ public class LabelDetectorProcessor extends VisionProcessorBase<List<ImageLabel>
         testStr = str;
     }
 
+    public LabelDetectorProcessor(Context context, ImageLabelerOptionsBase options, model_option opt_model) {
+        super(context);
+        imageLabeler = ImageLabeling.getClient(options);
+        modelOption = opt_model;
+    }
 
 
     @Override
@@ -70,7 +85,12 @@ public class LabelDetectorProcessor extends VisionProcessorBase<List<ImageLabel>
 
     @Override
     protected Task<List<ImageLabel>> detectInImage(InputImage image) {
-        return imageLabeler.process(image);
+        if (modelOption == model_option.AGE) {
+            // preprocess image
+        }
+        else
+            return imageLabeler.process(image);
+
     }
 
     @Override

@@ -21,10 +21,15 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
+
 import android.media.Image;
 import android.media.Image.Plane;
 import android.net.Uri;
@@ -57,9 +62,14 @@ public class BitmapUtils {
         byte[] imageInBuffer = new byte[data.limit()];
         data.get(imageInBuffer, 0, imageInBuffer.length);
         try {
+
+
             YuvImage image =
                     new YuvImage(
                             imageInBuffer, ImageFormat.NV21, metadata.getWidth(), metadata.getHeight(), null);
+
+
+
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             image.compressToJpeg(new Rect(0, 0, metadata.getWidth(), metadata.getHeight()), 80, stream);
 
@@ -72,6 +82,36 @@ public class BitmapUtils {
         }
         return null;
     }
+
+    private static Bitmap resizeBitmap(Bitmap bitmap, int newWidth, int newHeight)
+    {
+
+        Bitmap resizedBitmap = Bitmap.createScaledBitmap(
+                bitmap, newWidth, newHeight, false);
+        return resizedBitmap;
+    }
+
+
+
+
+    public static Bitmap toGrayscale(Bitmap bmpOriginal)
+    {
+        int width, height;
+        height = bmpOriginal.getHeight();
+        width = bmpOriginal.getWidth();
+
+        Bitmap bmpGrayscale = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+
+        Canvas c = new Canvas(bmpGrayscale);
+        Paint paint = new Paint();
+        ColorMatrix cm = new ColorMatrix();
+        cm.setSaturation(0);
+        ColorMatrixColorFilter f = new ColorMatrixColorFilter(cm);
+        paint.setColorFilter(f);
+        c.drawBitmap(bmpOriginal, 0, 0, paint);
+        return bmpGrayscale;
+    }
+
 
     /**
      * Converts a YUV_420_888 image from CameraX API to a bitmap.
