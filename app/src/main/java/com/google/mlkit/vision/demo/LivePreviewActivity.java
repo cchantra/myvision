@@ -108,6 +108,7 @@ public final class LivePreviewActivity extends AppCompatActivity
     private String selectedModel = OBJECT_DETECTION;
 
    // ExecutorService executorService = Executors.newFixedThreadPool(4);
+    public static DetectionMode mode = new DetectionMode();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -259,6 +260,7 @@ public final class LivePreviewActivity extends AppCompatActivity
                                     .build();
                     CustomObjectDetectorOptions customObjectDetectorOptions_face_recog =
                             PreferenceUtils.getCustomObjectDetectorOptionsForLivePreview(this, localModel_face_recog);
+                    mode.setMode(Constant.FACE_OPTION);
                     cameraSource.setMachineLearningFrameProcessor(
                             new ObjectDetectorProcessor(this, customObjectDetectorOptions_face_recog));
 
@@ -306,6 +308,8 @@ public final class LivePreviewActivity extends AppCompatActivity
                                     .build();
                     customImageLabelerOptions =
                             new CustomImageLabelerOptions.Builder(localClassifier_age).build();
+
+                    mode.setMode(Constant.AGE_OPTION);
                     cameraSource.setMachineLearningFrameProcessor(
                             new LabelDetectorProcessor(this, customImageLabelerOptions));
                     break;
@@ -319,6 +323,7 @@ public final class LivePreviewActivity extends AppCompatActivity
                                     .build();
                     customImageLabelerOptions =
                             new CustomImageLabelerOptions.Builder(localClassifier_exp).build();
+                    mode.setMode(Constant.EXP_OPTION);
                     cameraSource.setMachineLearningFrameProcessor(
                             new LabelDetectorProcessor(this, customImageLabelerOptions));
                     break;
@@ -331,6 +336,7 @@ public final class LivePreviewActivity extends AppCompatActivity
                                     .build();
                     customImageLabelerOptions =
                             new CustomImageLabelerOptions.Builder(localClassifier_gender).build();
+                    mode.setMode(Constant.GENDER_OPTION);
                     cameraSource.setMachineLearningFrameProcessor(
                             new LabelDetectorProcessor(this, customImageLabelerOptions));
                     break;
@@ -339,6 +345,7 @@ public final class LivePreviewActivity extends AppCompatActivity
                     cameraSource.setMachineLearningFrameProcessor(
                             new AutoMLImageLabelerProcessor(this));
                     break;*/
+
                 case TEST_JSON:
                     Log.i(TAG, "Test JSON");
                     String[] input_JSON =  {"ff", "ff"};
