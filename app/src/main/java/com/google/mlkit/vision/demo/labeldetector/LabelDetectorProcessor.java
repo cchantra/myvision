@@ -17,6 +17,7 @@
 package com.google.mlkit.vision.demo.labeldetector;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.os.Build;
 import android.util.Log;
 
@@ -90,9 +91,19 @@ public class LabelDetectorProcessor extends VisionProcessorBase<List<ImageLabel>
     protected Task<List<ImageLabel>> detectInImage(InputImage image) {
         if (model_option == Constant.AGE_OPTION) {
             // preprocess image
+            Log.e(TAG,"detect In Image Age option");
             ByteBuffer imageByte = image.getByteBuffer();
+            int height = image.getHeight();
+            int width = image.getWidth();
+            Bitmap imageBMP = BitmapUtils.createBitMap(imageByte, height, width); // resize to 224x224
+            imageBMP = BitmapUtils.resizeBitmap(imageBMP,224,224);
+            InputImage resizeImage = InputImage.fromBitmap(imageBMP,0);
+             return imageLabeler.process(resizeImage);
 
-             BitmapUtils.getBitmap(imageByte);
+
+        }
+        if (model_option == Constant.GENDER_OPTION)
+        {
 
         }
         else

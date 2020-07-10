@@ -83,7 +83,16 @@ public class BitmapUtils {
         return null;
     }
 
-    private static Bitmap resizeBitmap(Bitmap bitmap, int newWidth, int newHeight)
+    public static Bitmap createBitMap(ByteBuffer data, int imageWidth, int imageHeight)
+    {
+
+        Bitmap bmp = Bitmap.createBitmap(imageWidth, imageHeight, Bitmap.Config.ARGB_8888);
+
+        bmp.copyPixelsFromBuffer(data);
+        return bmp;
+    }
+
+    public static Bitmap resizeBitmap(Bitmap bitmap, int newWidth, int newHeight)
     {
 
         Bitmap resizedBitmap = Bitmap.createScaledBitmap(
