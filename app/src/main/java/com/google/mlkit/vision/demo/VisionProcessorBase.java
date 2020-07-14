@@ -36,14 +36,16 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskExecutors;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.demo.preference.PreferenceUtils;
+import com.google.mlkit.vision.face.Face;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
 /**
  * Abstract base class for vision frame processors. Subclasses need to implement {@link
- * #onSuccess(Object, GraphicOverlay)} to define what they want to with the detection results and
+ * #onSuccess(Object, Bitmap, GraphicOverlay)} to define what they want to with the detection results and
  * {@link #detectInImage(InputImage)} to specify the detector object.
  *
  * @param <T> The type of the detected feature.
@@ -208,8 +210,19 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
                             graphicOverlay.clear();
                             if (originalCameraImage != null) {
                                 graphicOverlay.add(new CameraImageGraphic(graphicOverlay, originalCameraImage));
+
                             }
-                            VisionProcessorBase.this.onSuccess(results, graphicOverlay);
+                            VisionProcessorBase.this.onSuccess(results, originalCameraImage, graphicOverlay);
+                            if (originalCameraImage != null) {
+                                List<Face> faces = (List<Face> ) results;
+                                for (Face face : faces) {
+                                    Bitmap croppedImage = BitmapUtils.cropBitmap( originalCameraImage,   face.getBoundingBox());
+                                    System.out.println("Crop");
+
+                                }
+
+                            }
+
                             graphicOverlay.add(
                                     new InferenceInfoGraphic(
                                             graphicOverlay, currentLatencyMs, shouldShowFps ? framesPerSecond : null));
@@ -243,7 +256,7 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
 
     protected abstract Task<T> detectInImage(InputImage image);
 
-    protected abstract void onSuccess(@NonNull T results, @NonNull GraphicOverlay graphicOverlay);
+    protected abstract void onSuccess(@NonNull T results, @NonNull Bitmap image, @NonNull GraphicOverlay graphicOverlay);
 
     protected abstract void onFailure(@NonNull Exception e);
 }

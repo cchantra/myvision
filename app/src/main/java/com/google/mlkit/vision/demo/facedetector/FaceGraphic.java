@@ -144,7 +144,9 @@ public class FaceGraphic extends Graphic {
                 labelPaints[colorID]);
         yLabelOffset += ID_TEXT_SIZE;
         canvas.drawRect(left, top, right, bottom, boxPaints[colorID]);
-        canvas.drawText("ID: " + face.getTrackingId(), left, top + yLabelOffset,
+        if (face.getTrackingId() != null)
+
+            canvas.drawText("ID: " + face.getTrackingId(), left, top + yLabelOffset,
                 idPaints[colorID]);
         yLabelOffset += lineHeight;
 

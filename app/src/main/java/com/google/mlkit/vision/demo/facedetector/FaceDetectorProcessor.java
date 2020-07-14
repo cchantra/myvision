@@ -17,15 +17,22 @@
 package com.google.mlkit.vision.demo.facedetector;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.PointF;
+import android.os.SystemClock;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.Task;
 import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.demo.Constant;
 import com.google.mlkit.vision.demo.GraphicOverlay;
+import com.google.mlkit.vision.demo.LivePreviewActivity;
+import com.google.mlkit.vision.demo.Logger;
 import com.google.mlkit.vision.demo.VisionProcessorBase;
+import com.google.mlkit.vision.demo.tflite.Classifier;
+import com.google.mlkit.vision.demo.tflite.GenderClassifier;
 import com.google.mlkit.vision.face.Face;
 import com.google.mlkit.vision.face.FaceDetection;
 import com.google.mlkit.vision.face.FaceDetector;
@@ -41,23 +48,48 @@ import java.util.Locale;
 public class FaceDetectorProcessor extends VisionProcessorBase<List<Face>> {
 
     private static final String TAG = "FaceDetectorProcessor";
+    private static final Logger LOGGER = new Logger();
 
     private final FaceDetector detector;
 
-    public FaceDetectorProcessor(Context context) {
+    private  int sensorOrientation;
+
+    private int mode;
+    private Context context;
+    private Classifier classifier;
+
+
+    public FaceDetectorProcessor(Context context, int mode,  Classifier classifier) {
         this(
                 context,
                 new FaceDetectorOptions.Builder()
                         .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
                         .enableTracking()
-                        .build());
+                        .build(), mode,   classifier);
+
+      this.mode = mode;
+      this.context = context;
+
+      this.classifier = classifier;
+
+
+
     }
 
-    public FaceDetectorProcessor(Context context, FaceDetectorOptions options) {
+    public FaceDetectorProcessor(Context context, FaceDetectorOptions options, int mode,   Classifier classifier ) {
         super(context);
         Log.v(MANUAL_TESTING_LOG, "Face detector options: " + options);
         detector = FaceDetection.getClient(options);
+        this.mode = mode;
+        this.context = context;
+
+        this.classifier = classifier;
+
     }
+
+   /* public FaceDetectorProcessor(Context context, FaceDetectorOptions build) {
+        super(context);
+    }*/
 
     @Override
     public void stop() {
@@ -67,14 +99,32 @@ public class FaceDetectorProcessor extends VisionProcessorBase<List<Face>> {
 
     @Override
     protected Task<List<Face>> detectInImage(InputImage image) {
+
+
         return detector.process(image);
+
+
     }
 
     @Override
-    protected void onSuccess(@NonNull List<Face> faces, @NonNull GraphicOverlay graphicOverlay) {
+    protected void onSuccess(@NonNull List<Face> faces, @NonNull Bitmap bitmap, @NonNull GraphicOverlay graphicOverlay) {
+
+
         for (Face face : faces) {
             graphicOverlay.add(new FaceGraphic(graphicOverlay, face));
+
+
+            final long startTime = SystemClock.uptimeMillis();
+
+            final List<Classifier.Recognition> results =
+                    classifier.recognizeImage(bitmap);
+            long lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
+            LOGGER.v("Detect: %s", results);
+            System.out.println(results);
+
             logExtrasForTesting(face);
+
+
         }
     }
 

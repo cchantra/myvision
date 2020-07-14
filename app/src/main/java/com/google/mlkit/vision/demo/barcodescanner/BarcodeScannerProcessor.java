@@ -17,6 +17,7 @@
 package com.google.mlkit.vision.demo.barcodescanner;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.util.Log;
 
@@ -64,7 +65,7 @@ public class BarcodeScannerProcessor extends VisionProcessorBase<List<Barcode>> 
 
     @Override
     protected void onSuccess(
-            @NonNull List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay) {
+            @NonNull List<Barcode> barcodes, @NonNull Bitmap bitmap, @NonNull GraphicOverlay graphicOverlay) {
         if (barcodes.isEmpty()) {
             Log.v(MANUAL_TESTING_LOG, "No barcode has been detected");
         }

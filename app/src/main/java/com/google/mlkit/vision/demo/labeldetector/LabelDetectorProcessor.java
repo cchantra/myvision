@@ -18,63 +18,35 @@ package com.google.mlkit.vision.demo.labeldetector;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 
 import com.google.android.gms.tasks.Task;
 import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.demo.BitmapUtils;
-import com.google.mlkit.vision.demo.DetectionMode;
 import com.google.mlkit.vision.demo.GraphicOverlay;
 import com.google.mlkit.vision.demo.VisionProcessorBase;
-import com.google.mlkit.vision.demo.Constant;
 import com.google.mlkit.vision.label.ImageLabel;
 import com.google.mlkit.vision.label.ImageLabeler;
 import com.google.mlkit.vision.label.ImageLabelerOptionsBase;
 import com.google.mlkit.vision.label.ImageLabeling;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.List;
 
 /**
  * Custom InputImage Classifier Demo.
  */
-
-
-
 public class LabelDetectorProcessor extends VisionProcessorBase<List<ImageLabel>> {
 
     private static final String TAG = "LabelDetectorProcessor";
 
     private final ImageLabeler imageLabeler;
 
-
-    private String testStr = "...Test";
-    private int model_option   = Constant.AGE_OPTION;
-
-
-
     public LabelDetectorProcessor(Context context, ImageLabelerOptionsBase options) {
         super(context);
         imageLabeler = ImageLabeling.getClient(options);
     }
-
-    public LabelDetectorProcessor(Context context, ImageLabelerOptionsBase options, String str) {
-        super(context);
-        imageLabeler = ImageLabeling.getClient(options);
-        testStr = str;
-    }
-
-    public LabelDetectorProcessor(Context context, ImageLabelerOptionsBase options, int opt_model) {
-        super(context);
-        imageLabeler = ImageLabeling.getClient(options);
-        model_option = opt_model;
-    }
-
 
     @Override
     public void stop() {
@@ -86,35 +58,15 @@ public class LabelDetectorProcessor extends VisionProcessorBase<List<ImageLabel>
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     protected Task<List<ImageLabel>> detectInImage(InputImage image) {
-        if (model_option == Constant.AGE_OPTION) {
-            // preprocess image
-            Log.e(TAG,"detect In Image Age option");
-            ByteBuffer imageByte = image.getByteBuffer();
-            int height = image.getHeight();
-            int width = image.getWidth();
-            Bitmap imageBMP = BitmapUtils.createBitMap(imageByte, height, width); // resize to 224x224
-            imageBMP = BitmapUtils.resizeBitmap(imageBMP,224,224);
-            InputImage resizeImage = InputImage.fromBitmap(imageBMP,0);
-             return imageLabeler.process(resizeImage);
-
-
-        }
-        if (model_option == Constant.GENDER_OPTION)
-        {
-
-        }
-        else
-            return imageLabeler.process(image);
-
+        return imageLabeler.process(image);
     }
 
     @Override
     protected void onSuccess(
-            @NonNull List<ImageLabel> labels, @NonNull GraphicOverlay graphicOverlay) {
-        graphicOverlay.add(new LabelGraphic(graphicOverlay, labels, testStr));
+            @NonNull List<ImageLabel> labels, @NonNull Bitmap bitmap, @NonNull GraphicOverlay graphicOverlay) {
+        graphicOverlay.add(new LabelGraphic(graphicOverlay, labels));
         logExtrasForTesting(labels);
     }
 

@@ -41,9 +41,7 @@ public class LabelGraphic extends GraphicOverlay.Graphic {
 
     private final List<ImageLabel> labels;
 
-    private String testStr = null;
-
-    public LabelGraphic(GraphicOverlay overlay, List<ImageLabel> labels, String str) {
+    public LabelGraphic(GraphicOverlay overlay, List<ImageLabel> labels) {
         super(overlay);
         this.overlay = overlay;
         this.labels = labels;
@@ -55,8 +53,6 @@ public class LabelGraphic extends GraphicOverlay.Graphic {
         labelPaint.setColor(Color.BLACK);
         labelPaint.setStyle(Paint.Style.FILL);
         labelPaint.setAlpha(200);
-
-        testStr = str;
     }
 
     @Override
@@ -73,15 +69,7 @@ public class LabelGraphic extends GraphicOverlay.Graphic {
         float x = Math.max(0, overlay.getWidth() / 2.0f - maxWidth / 2.0f);
         float y = Math.max(200, overlay.getHeight() / 2.0f - totalHeight / 2.0f);
 
-        int total =0;
-        for (ImageLabel label : labels) {
-            if (label.getText().equals("N/A")) {
-                continue;
-            }
-            total += 1;
-        }
-
-        if (total > 0 && !labels.isEmpty()) {
+        if (!labels.isEmpty()) {
             float padding = 20;
             canvas.drawRect(x - padding,
                     y - padding,
@@ -90,11 +78,7 @@ public class LabelGraphic extends GraphicOverlay.Graphic {
                     labelPaint);
         }
 
-
         for (ImageLabel label : labels) {
-            if (label.getText().equals("N/A")) {
-                continue;
-            }
             if (y + TEXT_SIZE * 2 > overlay.getHeight()) {
                 break;
             }
@@ -104,11 +88,6 @@ public class LabelGraphic extends GraphicOverlay.Graphic {
                     String.format(Locale.US, LABEL_FORMAT, label.getConfidence() * 100, label.getIndex()),
                     x, y + TEXT_SIZE, textPaint);
             y += TEXT_SIZE;
-        }
-        if (total > 0 && testStr != null) {
-
-            canvas.drawText(testStr,
-                    x, y + TEXT_SIZE, textPaint);
         }
     }
 }

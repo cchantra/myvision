@@ -86,10 +86,41 @@ public class BitmapUtils {
     public static Bitmap createBitMap(ByteBuffer data, int imageWidth, int imageHeight)
     {
 
-        Bitmap bmp = Bitmap.createBitmap(imageWidth, imageHeight, Bitmap.Config.ARGB_8888);
+        data.rewind();
+        byte[] imageInBuffer = new byte[data.limit()];
+        data.get(imageInBuffer, 0, imageInBuffer.length);
+        try {
 
-        bmp.copyPixelsFromBuffer(data);
-        return bmp;
+
+            YuvImage image =
+                    new YuvImage(
+                            imageInBuffer, ImageFormat.NV21, imageWidth, imageHeight, null);
+
+
+
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            image.compressToJpeg(new Rect(0, 0, imageWidth, imageHeight), 80, stream);
+
+            Bitmap bmp = BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size());
+
+            stream.close();
+            return bmp;
+        } catch (Exception e) {
+            Log.e("VisionProcessorBase", "Error: " + e.getMessage());
+        }
+       // Bitmap bmp = Bitmap.createBitmap(imageWidth, imageHeight, Bitmap.Config...);
+
+       // bmp.copyPixelsFromBuffer(data);
+        return null;
+    }
+
+    public static Bitmap cropBitmap(Bitmap bitmap, Rect rect) {
+        int w = rect.right - rect.left;
+        int h = rect.bottom - rect.top;
+        Bitmap ret = Bitmap.createBitmap(w, h, bitmap.getConfig());
+        Canvas canvas = new Canvas(ret);
+        canvas.drawBitmap(bitmap, -rect.left, -rect.top, null);
+        return ret;
     }
 
     public static Bitmap resizeBitmap(Bitmap bitmap, int newWidth, int newHeight)
@@ -120,6 +151,7 @@ public class BitmapUtils {
         c.drawBitmap(bmpOriginal, 0, 0, paint);
         return bmpGrayscale;
     }
+
 
 
     /**
@@ -251,6 +283,46 @@ public class BitmapUtils {
         }
 
         return exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+    }
+
+    public static ByteBuffer convertBitmapToRGBByteBuffer( Bitmap bitmap ) {
+
+
+        ByteBuffer imgData = ByteBuffer.allocate(4* Constant.DIM_BATCH_SIZE * Constant.DIM_IMG_SIZE_X * Constant.DIM_IMG_SIZE_Y * Constant.DIM_PIXEL_SIZE);
+
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        imgData.rewind();
+
+
+        //int size = bitmap.getRowBytes() * bitmap.getHeight();
+        //ByteBuffer byteBuffer = ByteBuffer.allocate(size);
+        //bitmap.copyPixelsToBuffer(byteBuffer);
+
+        int [] intValues = new int [bitmap.getWidth() * bitmap.getHeight()];
+
+        bitmap.getPixels
+                (intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+
+        int pixel = 0;
+        for (int i =0; i < Constant.DIM_IMG_SIZE_X; i++) {
+            for (int j =0; j < Constant.DIM_IMG_SIZE_Y; j++) {
+                int value = intValues[pixel++];
+
+                int red = (value & 0xff0000) >> 16;
+                int green = (value & 0xff00) >> 8;
+                int blue = (value & 0xff) >> 0;
+
+                imgData.putFloat ((float) ((  red - Constant.IMAGE_MEAN) / Constant.IMAGE_STD));
+
+                imgData.putFloat((float) (( green - Constant.IMAGE_MEAN) / Constant.IMAGE_STD));
+                imgData.putFloat((float) (( blue - Constant.IMAGE_MEAN) / Constant.IMAGE_STD));
+
+
+            }
+        }
+       // imgData.rewind();
+        return imgData;
     }
 
     public static ByteBuffer convertBitmapToNv21Buffer(Bitmap bitmap) {

@@ -392,7 +392,7 @@ public final class StillImageActivity extends AppCompatActivity {
                     imageProcessor = new ObjectDetectorProcessor(this, customObjectDetectorOptions);
                     break;
                 case FACE_DETECTION:
-                    imageProcessor = new FaceDetectorProcessor(this);
+                  //  imageProcessor = new FaceDetectorProcessor(this);
                     break;
                 case BARCODE_SCANNING:
                     imageProcessor = new BarcodeScannerProcessor(this);

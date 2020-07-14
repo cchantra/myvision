@@ -17,6 +17,7 @@
 package com.google.mlkit.vision.demo.textdetector;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.util.Log;
 
@@ -60,7 +61,7 @@ public class TextRecognitionProcessor extends VisionProcessorBase<Text> {
     }
 
     @Override
-    protected void onSuccess(@NonNull Text text, @NonNull GraphicOverlay graphicOverlay) {
+    protected void onSuccess(@NonNull Text text, @NonNull Bitmap bitmap, @NonNull GraphicOverlay graphicOverlay) {
         Log.d(TAG, "On-device Text detection successful");
         logExtrasForTesting(text);
         graphicOverlay.add(new TextGraphic(graphicOverlay, text));

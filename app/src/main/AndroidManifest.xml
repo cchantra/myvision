@@ -54,8 +54,18 @@
             </intent-filter>
         </activity> -->
 
-        <activity
+       <!-- <activity
             android:name=".ChooserActivity"
+            android:exported="true"
+            android:theme="@style/AppTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>-->
+
+        <activity
+            android:name=".LivePreviewActivity"
             android:exported="true"
             android:theme="@style/AppTheme">
             <intent-filter>
@@ -64,13 +74,7 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".LivePreviewActivity"
-            android:exported="true"
-            android:theme="@style/AppTheme">
-        </activity>
-
-        <activity
+       <!-- <activity
             android:name=".CameraXLivePreviewActivity"
             android:exported="true"
             android:theme="@style/AppTheme">
@@ -82,7 +86,7 @@
             android:theme="@style/AppTheme">
         </activity>
 
-        <!--<activity
+        <activity
             android:name=".kotlin.ChooserActivity"
             android:exported="true">
         </activity>

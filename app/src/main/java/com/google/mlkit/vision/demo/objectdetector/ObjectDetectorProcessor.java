@@ -17,6 +17,7 @@
 package com.google.mlkit.vision.demo.objectdetector;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -64,7 +65,7 @@ public class ObjectDetectorProcessor extends VisionProcessorBase<List<DetectedOb
 
     @Override
     protected void onSuccess(
-            @NonNull List<DetectedObject> results, @NonNull GraphicOverlay graphicOverlay) {
+            @NonNull List<DetectedObject> results, @NonNull Bitmap bitmap, @NonNull GraphicOverlay graphicOverlay) {
         for (DetectedObject object : results) {
             graphicOverlay.add(new ObjectGraphic(graphicOverlay, object));
         }

@@ -7,7 +7,7 @@ android {
 
     defaultConfig {
         applicationId "com.google.mlkit.vision.demo"
-        minSdkVersion 16
+        minSdkVersion 19
         multiDexEnabled true
         targetSdkVersion 29
 
@@ -64,13 +64,13 @@ dependencies {
     implementation 'com.google.android.gms:play-services-mlkit-text-recognition:16.1.0'
 
     // Image labeling with automl model support
-    implementation 'com.google.mlkit:image-labeling-automl:16.1.0'
+   implementation 'com.google.mlkit:image-labeling-automl:16.1.0'
 
     // Image labeling
     implementation 'com.google.mlkit:image-labeling:16.1.0'
 
     // Image labeling custom
-    implementation 'com.google.mlkit:image-labeling-custom:16.1.0'
+   implementation 'com.google.mlkit:image-labeling-custom:16.1.0'
 
     // -------------------------------------------------------
 
@@ -105,6 +105,13 @@ dependencies {
 
     //noinspection DuplicatePlatformClasses
     implementation "org.apache.httpcomponents:httpclient:4.5.6"
+
+   // implementation 'org.tensorflow:tensorflow-lite:1.13.1@aar'
+
+    // Build off of nightly TensorFlow Lite
+    implementation('org.tensorflow:tensorflow-lite:0.0.0-nightly') { changing = true }
+    implementation('org.tensorflow:tensorflow-lite-gpu:0.0.0-nightly') { changing = true }
+    implementation('org.tensorflow:tensorflow-lite-support:0.0.0-nightly') { changing = true }
 }
 
 configurations {
