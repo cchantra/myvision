@@ -56,7 +56,9 @@ import com.google.mlkit.vision.demo.objectdetector.ObjectDetectorProcessor;
 import com.google.mlkit.vision.demo.preference.PreferenceUtils;
 import com.google.mlkit.vision.demo.preference.SettingsActivity;
 import com.google.mlkit.vision.demo.preference.SettingsActivity.LaunchSource;
+import com.google.mlkit.vision.demo.tflite.AgeClassifier;
 import com.google.mlkit.vision.demo.tflite.Classifier;
+import com.google.mlkit.vision.demo.tflite.EmotionClassifier;
 import com.google.mlkit.vision.demo.tflite.GenderClassifier;
 import com.google.mlkit.vision.face.FaceDetectorOptions;
 import com.google.mlkit.vision.label.custom.CustomImageLabelerOptions;
@@ -95,6 +97,7 @@ public final class LivePreviewActivity extends AppCompatActivity
             recognitionValueTextView,
             recognition1ValueTextView,
             recognition2ValueTextView;
+    protected TextView recognitionIDView;
 
     private static final String FACE_DETECTION = "Facial Dectection";  /***/
     private static final String FACE_RECOGNITION = "Facial Recognition";  /***/
@@ -155,10 +158,10 @@ public final class LivePreviewActivity extends AppCompatActivity
         //options.add(OBJECT_DETECTION);
         //options.add(OBJECT_DETECTION_CUSTOM);
         //options.add(FACE_DETECTION);
-        //options.add(FACE_AGE);
+        options.add(FACE_AGE);
         options.add(FACE_GENDER);
-        /*options.add(FACE_EXPRESSION);
-        options.add(FACE_RECOGNITION);*/
+        options.add(FACE_EXPRESSION);
+        /*options.add(FACE_RECOGNITION);*/
 
         //options.add(TEST_JSON);
 
@@ -204,13 +207,16 @@ public final class LivePreviewActivity extends AppCompatActivity
 
                     }
                 });
-        recognitionTextView = findViewById(R.id.detected_item);
-        recognitionValueTextView = findViewById(R.id.detected_item_value);
+        recognitionTextView = findViewById(R.id.detected_item0);
+        recognitionValueTextView = findViewById(R.id.detected_item0_value);
+
         recognition1TextView = findViewById(R.id.detected_item1);
         recognition1ValueTextView = findViewById(R.id.detected_item1_value);
+
         recognition2TextView = findViewById(R.id.detected_item2);
         recognition2ValueTextView = findViewById(R.id.detected_item2_value);
 
+        recognitionIDView = findViewById(R.id.detect_id);
         //sensorOrientation = rotation - getScreenOrientation();
        // LOGGER.i("Camera orientation relative to screen canvas: %d", sensorOrientation);
 
@@ -308,14 +314,27 @@ public final class LivePreviewActivity extends AppCompatActivity
          try {
              classifier = new GenderClassifier(this);
          } catch ( IOException e) {
-             LOGGER.e("Loadding gender classifier");
+             LOGGER.e("Loading gender classifier");
          }
      }
 
-     else   if (selectedModel == FACE_AGE)
+     else   if (selectedModel == FACE_AGE) {
          mode.setMode(Constant.AGE_OPTION);
-     else   if (selectedModel == FACE_EXPRESSION)
+         try {
+             classifier = new AgeClassifier(this);
+         } catch ( IOException e) {
+             LOGGER.e("Loading Age classifier");
+         }
+     }
+     else   if (selectedModel == FACE_EXPRESSION) {
          mode.setMode(Constant.EXP_OPTION);
+
+         try {
+             classifier = new EmotionClassifier(this);
+         } catch ( IOException e) {
+             LOGGER.e("Loading Emotion classifier");
+         }
+     }
      else   if (selectedModel == FACE_RECOGNITION)
          mode.setMode(Constant.FACE_OPTION);
 
@@ -659,6 +678,7 @@ public final class LivePreviewActivity extends AppCompatActivity
 
             FaceDetectorOptions faceDetectorOptions =
                     PreferenceUtils.getFaceDetectorOptionsForLivePreview(this);
+
             cameraSource.setMachineLearningFrameProcessor(
                     new FaceDetectorProcessor(this ,faceDetectorOptions, mode.getMode(), classifier ));
 
@@ -679,7 +699,12 @@ public final class LivePreviewActivity extends AppCompatActivity
 
 
     @UiThread
-    protected void showResultsInBottomSheet(List<Classifier.Recognition> results) {
+    public void showObjectID(int id) {
+        recognitionIDView.setText(String.format("Face : %2d", id ));
+    }
+
+    @UiThread
+    public void showResultsInBottomSheet(List<Classifier.Recognition> results) {
 
         // limit only three results at most
 
@@ -687,17 +712,21 @@ public final class LivePreviewActivity extends AppCompatActivity
             Classifier.Recognition recognition = results.get(0);
             if (recognition != null) {
                 if (recognition.getTitle() != null) recognitionTextView.setText(recognition.getTitle());
-                if (recognition.getConfidence() != null)
+                if (recognition.getConfidence() != null) {
                     recognitionValueTextView.setText(
                             String.format("%.2f", (100 * recognition.getConfidence())) + "%");
+                    System.out.println(recognition.getTitle()+" "+String.format("%.2f", (100 * recognition.getConfidence())) + "%");
+                }
             }
 
             Classifier.Recognition recognition1 = results.get(1);
             if (recognition1 != null) {
                 if (recognition1.getTitle() != null) recognition1TextView.setText(recognition1.getTitle());
-                if (recognition1.getConfidence() != null)
+                if (recognition1.getConfidence() != null) {
                     recognition1ValueTextView.setText(
                             String.format("%.2f", (100 * recognition1.getConfidence())) + "%");
+                    System.out.println(recognition1.getTitle()+" "+String.format("%.2f", (100 * recognition1.getConfidence())) + "%");
+                }
             }
             if (results.size() > 2) {
                 Classifier.Recognition recognition2 = results.get(2);

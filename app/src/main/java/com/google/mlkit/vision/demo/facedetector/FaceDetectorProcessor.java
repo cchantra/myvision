@@ -26,13 +26,13 @@ import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.Task;
 import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.demo.BitmapUtils;
 import com.google.mlkit.vision.demo.Constant;
 import com.google.mlkit.vision.demo.GraphicOverlay;
 import com.google.mlkit.vision.demo.LivePreviewActivity;
 import com.google.mlkit.vision.demo.Logger;
 import com.google.mlkit.vision.demo.VisionProcessorBase;
 import com.google.mlkit.vision.demo.tflite.Classifier;
-import com.google.mlkit.vision.demo.tflite.GenderClassifier;
 import com.google.mlkit.vision.face.Face;
 import com.google.mlkit.vision.face.FaceDetection;
 import com.google.mlkit.vision.face.FaceDetector;
@@ -109,24 +109,32 @@ public class FaceDetectorProcessor extends VisionProcessorBase<List<Face>> {
     @Override
     protected void onSuccess(@NonNull List<Face> faces, @NonNull Bitmap bitmap, @NonNull GraphicOverlay graphicOverlay) {
 
-
+        int i=0;
         for (Face face : faces) {
-            graphicOverlay.add(new FaceGraphic(graphicOverlay, face));
+
+            i++;
+
+            graphicOverlay.add(new FaceGraphic(graphicOverlay, face, i));
 
 
             final long startTime = SystemClock.uptimeMillis();
-
+            Bitmap croppedImage = BitmapUtils.cropBitmap( bitmap,   face.getBoundingBox());
             final List<Classifier.Recognition> results =
-                    classifier.recognizeImage(bitmap);
+                    classifier.recognizeImage(croppedImage);
             long lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
             LOGGER.v("Detect: %s", results);
-            System.out.println(results);
+            System.out.println(i+" xxx" +results);
 
             logExtrasForTesting(face);
+
+            LivePreviewActivity imageView = (LivePreviewActivity) context;
+            imageView.showObjectID(i);
+            imageView.showResultsInBottomSheet(results);
 
 
         }
     }
+
 
     private static void logExtrasForTesting(Face face) {
         if (face != null) {

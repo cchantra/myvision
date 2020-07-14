@@ -62,10 +62,14 @@ public class FaceGraphic extends Graphic {
 
     private volatile Face face;
 
-    FaceGraphic(GraphicOverlay overlay, Face face) {
+    int id;
+
+    FaceGraphic(GraphicOverlay overlay, Face face, int id) {
         super(overlay);
 
         this.face = face;
+        this.id = id;
+        System.out.println("id " + id);
         final int selectedColor = Color.WHITE;
 
         facePositionPaint = new Paint();
@@ -120,6 +124,7 @@ public class FaceGraphic extends Graphic {
 
         // Calculate width and height of label box
         float textWidth = idPaints[colorID].measureText("ID: " + face.getTrackingId());
+        float textWidth_id = idPaints[colorID].measureText(String.format("Face: %2d ",id));
         if (face.getSmilingProbability() != null) {
             yLabelOffset -= lineHeight;
             textWidth = Math.max(textWidth, idPaints[colorID].measureText(
@@ -143,11 +148,21 @@ public class FaceGraphic extends Graphic {
                 top,
                 labelPaints[colorID]);
         yLabelOffset += ID_TEXT_SIZE;
-        canvas.drawRect(left, top, right, bottom, boxPaints[colorID]);
-        if (face.getTrackingId() != null)
 
+        if (face.getTrackingId() != null) {
+            canvas.drawRect(left, top, right, bottom, boxPaints[colorID]);
             canvas.drawText("ID: " + face.getTrackingId(), left, top + yLabelOffset,
-                idPaints[colorID]);
+                    idPaints[colorID]);
+            yLabelOffset += ID_TEXT_SIZE;
+        }
+
+        canvas.drawRect(left, top, right, bottom, boxPaints[colorID]);
+        canvas.drawText( String.format("Face: %2d ",id), left, top + yLabelOffset,
+                    idPaints[colorID]);
+
+
+        canvas.drawRect(left, top, right, bottom, boxPaints[colorID]);
+
         yLabelOffset += lineHeight;
 
         // Draws all face contours.

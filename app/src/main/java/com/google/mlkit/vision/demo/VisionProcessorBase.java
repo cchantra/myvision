@@ -215,9 +215,11 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
                             VisionProcessorBase.this.onSuccess(results, originalCameraImage, graphicOverlay);
                             if (originalCameraImage != null) {
                                 List<Face> faces = (List<Face> ) results;
+                                int i=0;
                                 for (Face face : faces) {
                                     Bitmap croppedImage = BitmapUtils.cropBitmap( originalCameraImage,   face.getBoundingBox());
-                                    System.out.println("Crop");
+                                    System.out.println(i+" Crop");
+                                    i++;
 
                                 }
 
