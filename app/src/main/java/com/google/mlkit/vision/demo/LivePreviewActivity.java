@@ -51,8 +51,7 @@ import android.widget.ToggleButton;
 import com.google.android.gms.common.annotation.KeepName;
 import com.google.mlkit.common.model.LocalModel;
 import com.google.mlkit.vision.demo.facedetector.FaceDetectorProcessor;
-import com.google.mlkit.vision.demo.labeldetector.LabelDetectorProcessor;
-import com.google.mlkit.vision.demo.objectdetector.ObjectDetectorProcessor;
+
 import com.google.mlkit.vision.demo.preference.PreferenceUtils;
 import com.google.mlkit.vision.demo.preference.SettingsActivity;
 import com.google.mlkit.vision.demo.preference.SettingsActivity.LaunchSource;
