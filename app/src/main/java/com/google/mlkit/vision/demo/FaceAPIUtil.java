@@ -1,6 +1,7 @@
 package com.google.mlkit.vision.demo;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +27,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -115,6 +117,47 @@ public class FaceAPIUtil  extends AsyncTask <String, Integer, String> {
         return res;
     }
 
+    public  String sendPostByte(Bitmap bitmap, String url) {
+
+        String res = null;
+        try {
+            System.out.println(url);
+            URL obj = new URL(url);
+            HttpURLConnection conn = (HttpURLConnection) obj.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "images/jpeg");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setDoOutput(true);
+            conn.setDoInput(true);
+
+
+
+            DataOutputStream os = new DataOutputStream(conn.getOutputStream());
+
+            ByteArrayOutputStream bao = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG,90,bao);
+            byte [] data = bao.toByteArray();
+            //os.writeBytes(URLEncoder.encode(jsonParam.toString(), "UTF-8"));
+            os.write(data,0,data.length);
+
+            os.flush();
+            os.close();
+
+
+            Log.i("STATUS", String.valueOf(conn.getResponseCode()));
+            Log.i("MSG", conn.getResponseMessage());
+
+            res = readResponse(conn);
+
+
+            conn.disconnect();
+            return res;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return res;
+    }
     public String readResponse(HttpURLConnection con)
     {
         String res = null;
