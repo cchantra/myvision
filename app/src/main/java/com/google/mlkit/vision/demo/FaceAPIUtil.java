@@ -34,7 +34,7 @@ import android.util.Log;
 
 
 
-public class FaceAPIUtil  extends AsyncTask <String, Integer, String> {
+public class FaceAPIUtil  extends AsyncTask <Bitmap, Integer, String> {
 
     private URL url;
 
@@ -45,13 +45,15 @@ public class FaceAPIUtil  extends AsyncTask <String, Integer, String> {
         delegate = asyncResponse;
     }
 
-
+    public void setUrl (URL url) {
+        this.url = url;
+    }
 
 
     @Override
-    protected String doInBackground(String... params) {
+    protected String doInBackground(Bitmap... params) {
 
-        String res=sendPost( params);
+        String res=sendPostByte( params[0]);
 
         return res;
     }
@@ -117,12 +119,12 @@ public class FaceAPIUtil  extends AsyncTask <String, Integer, String> {
         return res;
     }
 
-    public  String sendPostByte(Bitmap bitmap, String url) {
+    public  String sendPostByte(Bitmap bitmap) {
 
         String res = null;
         try {
             System.out.println(url);
-            URL obj = new URL(url);
+            URL obj = url;
             HttpURLConnection conn = (HttpURLConnection) obj.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "images/jpeg");

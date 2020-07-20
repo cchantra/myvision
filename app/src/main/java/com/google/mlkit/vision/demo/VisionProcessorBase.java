@@ -38,6 +38,7 @@ import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.demo.preference.PreferenceUtils;
 import com.google.mlkit.vision.face.Face;
 
+import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Timer;
@@ -258,7 +259,7 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
 
     protected abstract Task<T> detectInImage(InputImage image);
 
-    protected abstract void onSuccess(@NonNull T results, @NonNull Bitmap image, @NonNull GraphicOverlay graphicOverlay);
+    protected abstract void onSuccess(@NonNull T results, @NonNull Bitmap image, @NonNull GraphicOverlay graphicOverlay) throws MalformedURLException;
 
     protected abstract void onFailure(@NonNull Exception e);
 }

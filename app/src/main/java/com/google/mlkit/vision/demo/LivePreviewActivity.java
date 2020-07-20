@@ -59,6 +59,7 @@ import com.google.mlkit.vision.demo.preference.SettingsActivity.LaunchSource;
 import com.google.mlkit.vision.demo.tflite.AgeClassifier;
 import com.google.mlkit.vision.demo.tflite.Classifier;
 import com.google.mlkit.vision.demo.tflite.EmotionClassifier;
+import com.google.mlkit.vision.demo.tflite.FaceAPIClassifier;
 import com.google.mlkit.vision.demo.tflite.GenderClassifier;
 import com.google.mlkit.vision.face.FaceDetectorOptions;
 import com.google.mlkit.vision.label.custom.CustomImageLabelerOptions;
@@ -66,7 +67,11 @@ import com.google.mlkit.vision.label.defaults.ImageLabelerOptions;
 import com.google.mlkit.vision.objects.custom.CustomObjectDetectorOptions;
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions;
 
+import org.json.JSONException;
+
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -161,7 +166,7 @@ public final class LivePreviewActivity extends AppCompatActivity
         options.add(FACE_AGE);
         options.add(FACE_GENDER);
         options.add(FACE_EXPRESSION);
-        /*options.add(FACE_RECOGNITION);*/
+        options.add(FACE_RECOGNITION);
 
         //options.add(TEST_JSON);
 
@@ -230,7 +235,11 @@ public final class LivePreviewActivity extends AppCompatActivity
             if (cameraSource == null) {
 
                 cameraSource  = new CameraSource(this, graphicOverlay);
-                setClassifier();
+                try {
+                    setClassifier();
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
                 Log.i(TAG, "Using Face Detector Processor");
                 FaceDetectorOptions faceDetectorOptions =
                         PreferenceUtils.getFaceDetectorOptionsForLivePreview(this);
@@ -274,7 +283,11 @@ public final class LivePreviewActivity extends AppCompatActivity
 
 
         Log.d(TAG, "Selected model: " + selectedModel);
-        setClassifier();
+        try {
+            setClassifier();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
         preview.stop();
         if (allPermissionsGranted()) {
             //createCameraSource(selectedModel);
@@ -307,8 +320,7 @@ public final class LivePreviewActivity extends AppCompatActivity
         preview.stop();
         startCameraSource();
     }
- private void setClassifier ()
- {
+ private void setClassifier () throws MalformedURLException {
      if (selectedModel == FACE_GENDER) {
          mode.setMode(Constant.GENDER_OPTION);
          try {
@@ -335,65 +347,25 @@ public final class LivePreviewActivity extends AppCompatActivity
              LOGGER.e("Loading Emotion classifier");
          }
      }
-     else   if (selectedModel == FACE_RECOGNITION)
+     else   if (selectedModel == FACE_RECOGNITION) {
          mode.setMode(Constant.FACE_OPTION);
+     }
+     else if (selectedModel == TEST_JSON) {
+         //faceAPI.sendPost(constantURL.testURL, input_JSON  );
+
+         mode.setMode(Constant.TEST_JSON);
+
+         try {
+             classifier = new FaceAPIClassifier(this);
+         } catch ( IOException e) {
+             LOGGER.e("Loading Emotion classifier");
+         }
+
+
+     }
 
  }
-/*
-    private void performAnalysis(String model)
-    {
-        try {
-            switch (model) {
 
-
-                case FACE_GENDER:
-                    Log.i(TAG, "Custom Gender Detector Processor");
-
-                    if (classifier != null) {
-                        final long startTime = SystemClock.uptimeMillis();
-                        final List<Classifier.Recognition> results =
-                                classifier.recognizeImage(rgbFrameBitmap, sensorOrientation);
-                        long lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
-                        LOGGER.v("Detect: %s", results);
-                        System.out.println(results);
-
-                        runOnUiThread(
-                                new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        showResultsInBottomSheet(results);
-                                        //showFrameInfo(previewWidth + "x" + previewHeight);
-                                        //showCropInfo(imageSizeX + "x" + imageSizeY);
-                                        //showCameraResolution(cropSize + "x" + cropSize);
-                                        //showRotationInfo(String.valueOf(sensorOrientation));
-                                        //showInference(lastProcessingTimeMs + "ms");
-                                    }
-                                });
-                    }
-
-                    LocalModel localClassifier_age =
-                            new LocalModel.Builder()
-                                    .setAssetFilePath("custom_models/face_age_classifier.tflite")
-                                    .build();
-                    CustomImageLabelerOptions customImageLabelerOptions =
-                            new CustomImageLabelerOptions.Builder(localClassifier_age).build();
-
-                    mode.setMode(Constant.GENDER_OPTION);
-                    cameraSource.setMachineLearningFrameProcessor(
-                            new LabelDetectorProcessor(this, customImageLabelerOptions));
-                    break;
-
-            }
-
-         } catch (Exception e) {
-            Log.e(TAG, "Can not create image processor: " + model, e);
-            Toast.makeText(
-                    getApplicationContext(),
-                    "Can not create image processor: " + e.getMessage(),
-                    Toast.LENGTH_LONG)
-                    .show();
-        }
-    } */
 
     protected int getScreenOrientation() {
         switch (getWindowManager().getDefaultDisplay().getRotation()) {

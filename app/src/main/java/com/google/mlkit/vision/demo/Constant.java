@@ -6,6 +6,7 @@ public final class Constant {
     public static final int FACE_OPTION = 2;
     public static final int EXP_OPTION = 3;
     public static final int GENDER_OPTION = 4;
+    public static final  int TEST_JSON = 5;
 
     public static String LABEL_PATH = "age_label.txt";
     public static  int INPUT_SIZE = 224;

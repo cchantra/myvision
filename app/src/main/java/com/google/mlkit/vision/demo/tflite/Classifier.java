@@ -6,11 +6,17 @@ import android.graphics.RectF;
 import android.os.Build;
 import android.os.SystemClock;
 import android.os.Trace;
+import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
+import com.google.mlkit.vision.demo.AsyncResponse;
+import com.google.mlkit.vision.demo.FaceAPIUtil;
 import com.google.mlkit.vision.demo.Logger;
+import com.google.mlkit.vision.demo.constantURL;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.gpu.GpuDelegate;
@@ -27,9 +33,13 @@ import org.tensorflow.lite.support.label.TensorLabel;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -45,6 +55,8 @@ public abstract  class Classifier {
         AGENET,
         EMOTIONNET,
         GENDERNET,
+        FACENET,
+        FACEAPI
     }
 
 
@@ -62,12 +74,12 @@ public abstract  class Classifier {
     /**
      * Image size along the x axis.
      */
-    private final int imageSizeX;
+    private int imageSizeX = 0;
 
     /**
      * Image size along the y axis.
      */
-    private final int imageSizeY;
+    private int imageSizeY = 0;
 
     /**
      * Optional GPU delegate for accleration.
@@ -102,12 +114,12 @@ public abstract  class Classifier {
     /**
      * Output probability TensorBuffer.
      */
-    private final TensorBuffer outputProbabilityBuffer;
+    private TensorBuffer outputProbabilityBuffer;
 
     /**
      * Processer to apply post processing of the output probability.
      */
-    private final TensorProcessor probabilityProcessor;
+    private  TensorProcessor probabilityProcessor;
 
     public static Model currentModel;
 
@@ -122,6 +134,15 @@ public abstract  class Classifier {
         } */
         if (model == Model.GENDERNET) {
              return new GenderClassifier(activity );
+        }
+        else if (model == Model.AGENET) {
+            return new AgeClassifier(activity );
+        }
+        else if (model == Model.EMOTIONNET) {
+            return new EmotionClassifier(activity );
+        }
+        if (model == Model.FACENET) {
+            return new faceClassifier(activity );
         } else {
             throw new UnsupportedOperationException();
         }
@@ -199,44 +220,53 @@ public abstract  class Classifier {
 
     /** Initializes a {@code Classifier}. */
     protected Classifier(Activity activity ) throws IOException {
-        tfliteModel = FileUtil.loadMappedFile(activity, getModelPath());
+        if (currentModel == Model.FACEAPI) {
 
-        //tfliteOptions.setNumThreads(numThreads);
-        tflite = new Interpreter(tfliteModel, tfliteOptions);
 
-        // Loads labels out from the label file.
-        labels = FileUtil.loadLabels(activity, getLabelPath());
+        }
+        else {
 
-        // Reads type and shape of input and output tensors, respectively.
-        int imageTensorIndex = 0;
-        int[] imageShape = tflite.getInputTensor(imageTensorIndex).shape(); // {1, height, width, 3}
-        imageSizeY = imageShape[1];
-        imageSizeX = imageShape[2];
-        System.out.println("---"+imageShape[0]+" "+imageShape[1]+" "+imageShape[2]+" "+imageShape[3]);
-        DataType imageDataType = tflite.getInputTensor(imageTensorIndex).dataType();
-        int probabilityTensorIndex = 0;
-        int[] probabilityShape =
-                tflite.getOutputTensor(probabilityTensorIndex).shape(); // {1, NUM_CLASSES}
-        DataType probabilityDataType = tflite.getOutputTensor(probabilityTensorIndex).dataType();
+            tfliteModel = FileUtil.loadMappedFile(activity, getModelPath());
 
-        // Creates the input tensor.
-        inputImageBuffer = new TensorImage(imageDataType);
+            //tfliteOptions.setNumThreads(numThreads);
+            tflite = new Interpreter(tfliteModel, tfliteOptions);
 
-        // Creates the output tensor and its processor.
-        outputProbabilityBuffer = TensorBuffer.createFixedSize(probabilityShape, probabilityDataType);
+            // Loads labels out from the label file.
+            labels = FileUtil.loadLabels(activity, getLabelPath());
 
-        // Creates the post processor for the output probability.
-        probabilityProcessor = new TensorProcessor.Builder().add(getPostprocessNormalizeOp()).build();
+            // Reads type and shape of input and output tensors, respectively.
+            int imageTensorIndex = 0;
+            int[] imageShape = tflite.getInputTensor(imageTensorIndex).shape(); // {1, height, width, 3}
+            imageSizeY = imageShape[1];
+            imageSizeX = imageShape[2];
+            System.out.println("---" + imageShape[0] + " " + imageShape[1] + " " + imageShape[2] + " " + imageShape[3]);
+            DataType imageDataType = tflite.getInputTensor(imageTensorIndex).dataType();
+            int probabilityTensorIndex = 0;
+            int[] probabilityShape =
+                    tflite.getOutputTensor(probabilityTensorIndex).shape(); // {1, NUM_CLASSES}
+            DataType probabilityDataType = tflite.getOutputTensor(probabilityTensorIndex).dataType();
 
-        LOGGER.d("Created a Tensorflow Lite Image Classifier.");
+            // Creates the input tensor.
+            inputImageBuffer = new TensorImage(imageDataType);
+
+            // Creates the output tensor and its processor.
+            outputProbabilityBuffer = TensorBuffer.createFixedSize(probabilityShape, probabilityDataType);
+
+            // Creates the post processor for the output probability.
+            probabilityProcessor = new TensorProcessor.Builder().add(getPostprocessNormalizeOp()).build();
+
+            LOGGER.d("Created a Tensorflow Lite Image Classifier.");
+        }
     }
+
 
     /** Runs inference and returns the classification results. */
     /** Runs inference and returns the classification results. */
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 
-    public List<Recognition> recognizeImage(final Bitmap bitmap ) {
+    public List<Recognition> recognizeImage(final Bitmap bitmap ) throws MalformedURLException {
         // Logs this method so that it can be analyzed with systrace.
+        final List<Recognition>  recogList;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             Trace.beginSection("recognizeImage");
         }
@@ -244,29 +274,58 @@ public abstract  class Classifier {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             Trace.beginSection("loadImage");
         }
-        long startTimeForLoadImage = SystemClock.uptimeMillis();
-        inputImageBuffer = loadImage(bitmap );
-        long endTimeForLoadImage = SystemClock.uptimeMillis();
-        Trace.endSection();
-        LOGGER.v("Timecost to load the image: " + (endTimeForLoadImage - startTimeForLoadImage));
+        if (currentModel == Model.FACEAPI) {
+            Bitmap [] bma = {bitmap};
 
-        // Runs the inference call.
-        Trace.beginSection("runInference");
-        long startTimeForReference = SystemClock.uptimeMillis();
-        //System.out.println(inputImageBuffer.getHeight());
-        tflite.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer.getBuffer().rewind());
-        long endTimeForReference = SystemClock.uptimeMillis();
-        Trace.endSection();
-        LOGGER.v("Timecost to run model inference: " + (endTimeForReference - startTimeForReference));
+            FaceAPIUtil asyncTask = new FaceAPIUtil(new URL(constantURL.FaceURL), new AsyncResponse() {
+                @Override
+                public void processFinish(String output) throws JSONException {
+                    //Here you will receive the result fired from async class
+                    //of onPostExecute(result) method.
 
-        // Gets the map of label and probability.
-        Map<String, Float> labeledProbability =
-                new TensorLabel(labels, probabilityProcessor.process(outputProbabilityBuffer))
-                        .getMapWithFloatValue();
-        Trace.endSection();
+                    Log.e("output", output);
+                    JSONObject json = new JSONObject(output);
+                    String[] results = new String[3];
+                    results[0] = json.getString("class");
+                    Log.e("class",  results[0]);
+                    // process return JSON depends on  type of API
+                    Map<String, Float> labeledProbability =  new HashMap<String, Float>();
+                    // insert into hashmap
+                    //
+                    recogList = getTopKProbability(labeledProbability);
 
-        // Gets top-k results.
-        return getTopKProbability(labeledProbability);
+                }
+            });
+
+            asyncTask.execute(bma);
+        }
+        else {
+            long startTimeForLoadImage = SystemClock.uptimeMillis();
+            inputImageBuffer = loadImage(bitmap);
+            long endTimeForLoadImage = SystemClock.uptimeMillis();
+            Trace.endSection();
+            LOGGER.v("Timecost to load the image: " + (endTimeForLoadImage - startTimeForLoadImage));
+
+            // Runs the inference call.
+            Trace.beginSection("runInference");
+            long startTimeForReference = SystemClock.uptimeMillis();
+            //System.out.println(inputImageBuffer.getHeight());
+            tflite.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer.getBuffer().rewind());
+            long endTimeForReference = SystemClock.uptimeMillis();
+            Trace.endSection();
+            LOGGER.v("Timecost to run model inference: " + (endTimeForReference - startTimeForReference));
+
+            // Gets the map of label and probability.
+            Map<String, Float> labeledProbability =
+                    new TensorLabel(labels, probabilityProcessor.process(outputProbabilityBuffer))
+                            .getMapWithFloatValue();
+            Trace.endSection();
+
+            // Gets top-k results.
+
+                    recogList = getTopKProbability(labeledProbability);
+        }
+        return recogList;
     }
 
     /** Closes the interpreter and model to release resources. */

@@ -39,6 +39,7 @@ import com.google.mlkit.vision.face.FaceDetector;
 import com.google.mlkit.vision.face.FaceDetectorOptions;
 import com.google.mlkit.vision.face.FaceLandmark;
 
+import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Locale;
 
@@ -107,31 +108,55 @@ public class FaceDetectorProcessor extends VisionProcessorBase<List<Face>> {
     }
 
     @Override
-    protected void onSuccess(@NonNull List<Face> faces, @NonNull Bitmap bitmap, @NonNull GraphicOverlay graphicOverlay) {
+    protected void onSuccess(@NonNull List<Face> faces, @NonNull Bitmap bitmap, @NonNull GraphicOverlay graphicOverlay) throws MalformedURLException {
 
         int i=0;
-        for (Face face : faces) {
-
-            i++;
-
-            graphicOverlay.add(new FaceGraphic(graphicOverlay, face, i));
-
-
+        if (mode == Constant.TEST_JSON) {
             final long startTime = SystemClock.uptimeMillis();
-            Bitmap croppedImage = BitmapUtils.cropBitmap( bitmap,   face.getBoundingBox());
+
             final List<Classifier.Recognition> results =
-                    classifier.recognizeImage(croppedImage);
+                    classifier.recognizeImage(bitmap);
             long lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
             LOGGER.v("Detect: %s", results);
-            System.out.println(i+" xxx" +results);
+            System.out.println(i + " xxx" + results);
 
-            logExtrasForTesting(face);
+            for (Face face : faces) {
 
-            LivePreviewActivity imageView = (LivePreviewActivity) context;
-            imageView.showObjectID(i);
-            imageView.showResultsInBottomSheet(results);
+                i++;
+                graphicOverlay.add(new FaceGraphic(graphicOverlay, face, i));
+
+                logExtrasForTesting(face);
+
+                LivePreviewActivity imageView = (LivePreviewActivity) context;
+                imageView.showObjectID(i);
+                imageView.showResultsInBottomSheet(results);
+
+            }
+        }
+        else {
+            for (Face face : faces) {
+
+                i++;
+
+                graphicOverlay.add(new FaceGraphic(graphicOverlay, face, i));
 
 
+                final long startTime = SystemClock.uptimeMillis();
+                Bitmap croppedImage = BitmapUtils.cropBitmap(bitmap, face.getBoundingBox());
+                final List<Classifier.Recognition> results =
+                        classifier.recognizeImage(croppedImage);
+                long lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
+                LOGGER.v("Detect: %s", results);
+                System.out.println(i + " xxx" + results);
+
+                logExtrasForTesting(face);
+
+                LivePreviewActivity imageView = (LivePreviewActivity) context;
+                imageView.showObjectID(i);
+                imageView.showResultsInBottomSheet(results);
+
+
+            }
         }
     }
 
