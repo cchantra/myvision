@@ -213,7 +213,11 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
                                 graphicOverlay.add(new CameraImageGraphic(graphicOverlay, originalCameraImage));
 
                             }
-                            VisionProcessorBase.this.onSuccess(results, originalCameraImage, graphicOverlay);
+                            try {
+                                VisionProcessorBase.this.onSuccess(results, originalCameraImage, graphicOverlay);
+                            } catch (MalformedURLException e) {
+                                e.printStackTrace();
+                            }
                             if (originalCameraImage != null) {
                                 List<Face> faces = (List<Face> ) results;
                                 int i=0;

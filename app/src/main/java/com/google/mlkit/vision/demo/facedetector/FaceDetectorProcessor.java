@@ -114,8 +114,8 @@ public class FaceDetectorProcessor extends VisionProcessorBase<List<Face>> {
         if (mode == Constant.TEST_JSON) {
             final long startTime = SystemClock.uptimeMillis();
 
-            final List<Classifier.Recognition> results =
-                    classifier.recognizeImage(bitmap);
+            final List<List<Classifier.Recognition>> results =
+                    classifier.recognizeImageAll(bitmap);
             long lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
             LOGGER.v("Detect: %s", results);
             System.out.println(i + " xxx" + results);
@@ -123,13 +123,14 @@ public class FaceDetectorProcessor extends VisionProcessorBase<List<Face>> {
             for (Face face : faces) {
 
                 i++;
-                graphicOverlay.add(new FaceGraphic(graphicOverlay, face, i));
+                graphicOverlay.add(new FaceGraphic(graphicOverlay, face, i)); // must draw itself
 
                 logExtrasForTesting(face);
 
+
                 LivePreviewActivity imageView = (LivePreviewActivity) context;
-                imageView.showObjectID(i);
-                imageView.showResultsInBottomSheet(results);
+               // imageView.showObjectID(i);
+               // imageView.showResultsInBottomSheet(results.get(i));
 
             }
         }

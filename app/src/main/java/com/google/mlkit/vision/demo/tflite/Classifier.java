@@ -10,11 +10,14 @@ import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
+import com.google.gson.JsonParser;
 import com.google.mlkit.vision.demo.AsyncResponse;
+import com.google.mlkit.vision.demo.Constant;
 import com.google.mlkit.vision.demo.FaceAPIUtil;
 import com.google.mlkit.vision.demo.Logger;
 import com.google.mlkit.vision.demo.constantURL;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.tensorflow.lite.DataType;
@@ -33,9 +36,12 @@ import org.tensorflow.lite.support.label.TensorLabel;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.net.CookieStore;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.MappedByteBuffer;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.GregorianCalendar;
@@ -44,20 +50,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 
+
+
 public abstract  class Classifier {
 
     private static final Logger LOGGER = new Logger();
 
-    /**
-     * The model type used for classification.
-     */
-    public enum Model {
-        AGENET,
-        EMOTIONNET,
-        GENDERNET,
-        FACENET,
-        FACEAPI
-    }
 
 
     /**
@@ -121,31 +119,14 @@ public abstract  class Classifier {
      */
     private  TensorProcessor probabilityProcessor;
 
-    public static Model currentModel;
+    public static int currentModel;
 
-    public static Classifier create(Activity activity, Model model)
-            throws IOException {
-        currentModel = model;
-        /*if (model == Model.AGENET) {
-            return new ClassifierAgeNet(activity, device, numThreads);
-        }
-        else if (model == Model.EMOTIONNET) {
-            return new ClassifierEmotionNet(activity, device, numThreads);
-        } */
-        if (model == Model.GENDERNET) {
-             return new GenderClassifier(activity );
-        }
-        else if (model == Model.AGENET) {
-            return new AgeClassifier(activity );
-        }
-        else if (model == Model.EMOTIONNET) {
-            return new EmotionClassifier(activity );
-        }
-        if (model == Model.FACENET) {
-            return new faceClassifier(activity );
-        } else {
-            throw new UnsupportedOperationException();
-        }
+    List<Recognition>  recogList;
+
+    public static void   create(Activity activity, int mode)
+              {
+        currentModel = mode;
+
     }
 
     /** An immutable result returned by a Classifier describing what was recognized. */
@@ -220,9 +201,9 @@ public abstract  class Classifier {
 
     /** Initializes a {@code Classifier}. */
     protected Classifier(Activity activity ) throws IOException {
-        if (currentModel == Model.FACEAPI) {
+        if (currentModel == Constant.TEST_JSON) {
 
-
+            System.out.println("FACE API");
         }
         else {
 
@@ -266,7 +247,7 @@ public abstract  class Classifier {
 
     public List<Recognition> recognizeImage(final Bitmap bitmap ) throws MalformedURLException {
         // Logs this method so that it can be analyzed with systrace.
-        final List<Recognition>  recogList;
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             Trace.beginSection("recognizeImage");
         }
@@ -274,7 +255,49 @@ public abstract  class Classifier {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             Trace.beginSection("loadImage");
         }
-        if (currentModel == Model.FACEAPI) {
+
+        long startTimeForLoadImage = SystemClock.uptimeMillis();
+        inputImageBuffer = loadImage(bitmap);
+        long endTimeForLoadImage = SystemClock.uptimeMillis();
+        Trace.endSection();
+        LOGGER.v("Timecost to load the image: " + (endTimeForLoadImage - startTimeForLoadImage));
+
+        // Runs the inference call.
+        Trace.beginSection("runInference");
+        long startTimeForReference = SystemClock.uptimeMillis();
+        //System.out.println(inputImageBuffer.getHeight());
+        tflite.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer.getBuffer().rewind());
+        long endTimeForReference = SystemClock.uptimeMillis();
+        Trace.endSection();
+        LOGGER.v("Timecost to run model inference: " + (endTimeForReference - startTimeForReference));
+
+        // Gets the map of label and probability.
+        Map<String, Float> labeledProbability =
+                new TensorLabel(labels, probabilityProcessor.process(outputProbabilityBuffer))
+                        .getMapWithFloatValue();
+        Trace.endSection();
+
+        // Gets top-k results.
+
+                recogList = getTopKProbability(labeledProbability);
+
+        return recogList;
+    }
+
+
+    public List<List<Recognition>> recognizeImageAll(final Bitmap bitmap ) throws MalformedURLException {
+        // Logs this method so that it can be analyzed with systrace.
+
+        List<List<Recognition>> recogListAll = new ArrayList<List<Recognition>>();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            Trace.beginSection("recognizeImage");
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            Trace.beginSection("loadImage");
+        }
+        if (currentModel == Constant.TEST_JSON) {
             Bitmap [] bma = {bitmap};
 
             FaceAPIUtil asyncTask = new FaceAPIUtil(new URL(constantURL.FaceURL), new AsyncResponse() {
@@ -284,48 +307,56 @@ public abstract  class Classifier {
                     //of onPostExecute(result) method.
 
                     Log.e("output", output);
+
+                    // parse : {'emotion': [['sad'], ['neutral']], 'detail': [[[1, 2, 3, 4], [0.56]], [[1, 2, 3, 5], [0.44]]]}
                     JSONObject json = new JSONObject(output);
-                    String[] results = new String[3];
-                    results[0] = json.getString("class");
-                    Log.e("class",  results[0]);
-                    // process return JSON depends on  type of API
-                    Map<String, Float> labeledProbability =  new HashMap<String, Float>();
-                    // insert into hashmap
-                    //
-                    recogList = getTopKProbability(labeledProbability);
+                    JSONArray emotionArray = (JSONArray) json.get("emotion");
+                    JSONArray detailArray = (JSONArray) json.get("detail");
+                    Map<String, Object []> labeledProbability =  new HashMap<String, Object[]>();
+
+                    for (int i=0; i < emotionArray.length(); i++) { // for each face
+                        System.out.println(emotionArray.get(i));
+                        System.out.println(detailArray.get(i));
+
+
+                        JSONArray plist = (JSONArray) emotionArray.get(i);
+                        JSONArray dlist = (JSONArray) detailArray.get(i);
+
+                        //String [] plist = (String []) obj; // plist[i] is array for each face
+                        //Object [] dlist = (Object [] ) detailArray.get(i); // array for each face
+                        for (int j=0; j < plist.length() ; j++) { // list of predictions
+                            Log.e("class", (String) plist.get(j));
+
+                            //Object [] ddlist = (Object[]) dlist[j];
+                            JSONArray  loc_array = (JSONArray)dlist.get(0);
+                            System.out.println(loc_array);
+
+                            JSONArray confs = (JSONArray)  dlist.get(1);
+
+
+                            System.out.println("list of confs");
+                            System.out.println(confs);
+                            Log.e("prob" ,   confs.get(j).toString());
+                            // insert into hashMap
+                            Object [] values = new Object[2];
+                            values[0] = (double ) confs.get(j);
+                            values[1] = new RectF( (int) loc_array.get(0), (int) loc_array.get(1),   (int)loc_array.get(0)+(int)loc_array.get(2), (int)loc_array.get(1)+ (int)loc_array.get(3));
+                            labeledProbability.put((String) plist.get(j),values);
+
+
+                        }
+                    }
+
+
+                    recogListAll.add(getTopKProbabilityWithLocation(labeledProbability));
 
                 }
             });
 
             asyncTask.execute(bma);
         }
-        else {
-            long startTimeForLoadImage = SystemClock.uptimeMillis();
-            inputImageBuffer = loadImage(bitmap);
-            long endTimeForLoadImage = SystemClock.uptimeMillis();
-            Trace.endSection();
-            LOGGER.v("Timecost to load the image: " + (endTimeForLoadImage - startTimeForLoadImage));
 
-            // Runs the inference call.
-            Trace.beginSection("runInference");
-            long startTimeForReference = SystemClock.uptimeMillis();
-            //System.out.println(inputImageBuffer.getHeight());
-            tflite.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer.getBuffer().rewind());
-            long endTimeForReference = SystemClock.uptimeMillis();
-            Trace.endSection();
-            LOGGER.v("Timecost to run model inference: " + (endTimeForReference - startTimeForReference));
-
-            // Gets the map of label and probability.
-            Map<String, Float> labeledProbability =
-                    new TensorLabel(labels, probabilityProcessor.process(outputProbabilityBuffer))
-                            .getMapWithFloatValue();
-            Trace.endSection();
-
-            // Gets top-k results.
-
-                    recogList = getTopKProbability(labeledProbability);
-        }
-        return recogList;
+        return recogListAll;
     }
 
     /** Closes the interpreter and model to release resources. */
@@ -366,7 +397,7 @@ public abstract  class Classifier {
         // TODO(b/143564309): Fuse ops inside ImageProcessor.
 
         ImageProcessor imageProcessor;
-        if (currentModel == Model.AGENET ||  currentModel == Model.EMOTIONNET  || currentModel == Model.GENDERNET) {
+        if (currentModel == Constant.AGE_OPTION ||  currentModel == Constant.EXP_OPTION || currentModel == Constant.GENDER_OPTION) {
             System.out.println(currentModel);
 
             imageProcessor =
@@ -410,7 +441,9 @@ public abstract  class Classifier {
         }
 
     }
+
     /** Gets the top-k results. */
+
     private static List<Recognition> getTopKProbability(Map<String, Float> labelProb) {
         // Find the best classifications.
 
@@ -438,6 +471,38 @@ public abstract  class Classifier {
         }
         return recognitions;
     }
+
+    /** Gets the top-k results. */
+    private static List<Recognition> getTopKProbabilityWithLocation(Map<String, Object[] > labelProb) {
+        // Find the best classifications.
+
+        PriorityQueue<Recognition> pq =
+                new PriorityQueue<>(
+                        MAX_RESULTS,
+                        new Comparator<Recognition>() {
+                            @Override
+                            public int compare(Recognition lhs, Recognition rhs) {
+                                // Intentionally reversed to put high confidence at the head of the queue.
+                                return Float.compare(rhs.getConfidence(), lhs.getConfidence());
+                            }
+                        });
+
+        for (Map.Entry<String, Object[]> entry : labelProb.entrySet()) {
+            Object [] values = entry.getValue();
+            double conf = (double) values[0];
+            pq.add(new Recognition("" + entry.getKey(), entry.getKey(), (float) conf, (RectF) values[1]));
+            System.out.println(entry.getValue());
+        }
+
+        final ArrayList<Recognition> recognitions = new ArrayList<>();
+        int recognitionsSize = Math.min(pq.size(), MAX_RESULTS);
+        // System.out.println(pq.size());
+        for (int i = 0; i < recognitionsSize; ++i) {
+            recognitions.add(pq.poll());
+        }
+        return recognitions;
+    }
+
 
     /** Gets the name of the model file stored in Assets. */
     protected abstract String getModelPath();

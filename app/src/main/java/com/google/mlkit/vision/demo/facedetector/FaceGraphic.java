@@ -162,6 +162,7 @@ public class FaceGraphic extends Graphic {
 
 
         canvas.drawRect(left, top, right, bottom, boxPaints[colorID]);
+        System.out.format("....%f %f %f %f \n",left,top,right,bottom);
 
         yLabelOffset += lineHeight;
 

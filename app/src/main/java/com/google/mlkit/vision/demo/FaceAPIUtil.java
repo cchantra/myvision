@@ -127,7 +127,8 @@ public class FaceAPIUtil  extends AsyncTask <Bitmap, Integer, String> {
             URL obj = url;
             HttpURLConnection conn = (HttpURLConnection) obj.openConnection();
             conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "images/jpeg");
+          //  conn.setRequestProperty("Content-Type", "images/jpeg");
+            conn.setRequestProperty("Content-type","application/octet-stream");
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
             conn.setDoInput(true);

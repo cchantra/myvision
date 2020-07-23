@@ -24,6 +24,7 @@ public class faceClassifier  extends Classifier {
 
     private static final float PROBABILITY_STD = 1.0f;
 
+
     /**
      * Initializes a {@code ClassifierFloatMobileNet}.
      *
@@ -32,6 +33,7 @@ public class faceClassifier  extends Classifier {
     public faceClassifier (Activity activity )
             throws IOException {
         super(activity );
+
     }
 
     @Override
