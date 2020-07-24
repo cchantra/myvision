@@ -285,10 +285,10 @@ public abstract  class Classifier {
     }
 
 
-    public List<List<Recognition>> recognizeImageAll(final Bitmap bitmap ) throws MalformedURLException {
+    public void recognizeImageAll(final Bitmap bitmap, List<List<Recognition>> recogListAll) throws MalformedURLException {
         // Logs this method so that it can be analyzed with systrace.
 
-        List<List<Recognition>> recogListAll = new ArrayList<List<Recognition>>();
+        //List<List<Recognition>> recogListAll = new ArrayList<List<Recognition>>();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             Trace.beginSection("recognizeImage");
@@ -300,63 +300,61 @@ public abstract  class Classifier {
         if (currentModel == Constant.TEST_JSON) {
             Bitmap [] bma = {bitmap};
 
-            FaceAPIUtil asyncTask = new FaceAPIUtil(new URL(constantURL.FaceURL), new AsyncResponse() {
-                @Override
-                public void processFinish(String output) throws JSONException {
-                    //Here you will receive the result fired from async class
-                    //of onPostExecute(result) method.
+            FaceAPIUtil asyncTask = new FaceAPIUtil(new URL(constantURL.FaceURL), output -> {
+                //Here you will receive the result fired from async class
+                //of onPostExecute(result) method.
 
-                    Log.e("output", output);
+                Log.e("output", output);
 
-                    // parse : {'emotion': [['sad'], ['neutral']], 'detail': [[[1, 2, 3, 4], [0.56]], [[1, 2, 3, 5], [0.44]]]}
-                    JSONObject json = new JSONObject(output);
-                    JSONArray emotionArray = (JSONArray) json.get("emotion");
-                    JSONArray detailArray = (JSONArray) json.get("detail");
-                    Map<String, Object []> labeledProbability =  new HashMap<String, Object[]>();
+                // parse : {'emotion': [['sad'], ['neutral']], 'detail': [[[1, 2, 3, 4], [0.56]], [[1, 2, 3, 5], [0.44]]]}
+                JSONObject json = new JSONObject(output);
+                JSONArray emotionArray = (JSONArray) json.get("emotion");
+                JSONArray detailArray = (JSONArray) json.get("detail");
+                Map<String, Object []> labeledProbability =  new HashMap<String, Object[]>();
 
-                    for (int i=0; i < emotionArray.length(); i++) { // for each face
-                        System.out.println(emotionArray.get(i));
-                        System.out.println(detailArray.get(i));
+                for (int i=0; i < emotionArray.length(); i++) { // for each face
+                    System.out.println(emotionArray.get(i));
+                    System.out.println(detailArray.get(i));
 
 
-                        JSONArray plist = (JSONArray) emotionArray.get(i);
-                        JSONArray dlist = (JSONArray) detailArray.get(i);
+                    JSONArray plist = (JSONArray) emotionArray.get(i);
+                    JSONArray dlist = (JSONArray) detailArray.get(i);
 
-                        //String [] plist = (String []) obj; // plist[i] is array for each face
-                        //Object [] dlist = (Object [] ) detailArray.get(i); // array for each face
-                        for (int j=0; j < plist.length() ; j++) { // list of predictions
-                            Log.e("class", (String) plist.get(j));
+                    //String [] plist = (String []) obj; // plist[i] is array for each face
+                    //Object [] dlist = (Object [] ) detailArray.get(i); // array for each face
+                    for (int j=0; j < plist.length() ; j++) { // list of predictions
+                        Log.e("class", (String) plist.get(j));
 
-                            //Object [] ddlist = (Object[]) dlist[j];
-                            JSONArray  loc_array = (JSONArray)dlist.get(0);
-                            System.out.println(loc_array);
+                        //Object [] ddlist = (Object[]) dlist[j];
+                        JSONArray  loc_array = (JSONArray)dlist.get(0);
+                        System.out.println(loc_array);
 
-                            JSONArray confs = (JSONArray)  dlist.get(1);
-
-
-                            System.out.println("list of confs");
-                            System.out.println(confs);
-                            Log.e("prob" ,   confs.get(j).toString());
-                            // insert into hashMap
-                            Object [] values = new Object[2];
-                            values[0] = (double ) confs.get(j);
-                            values[1] = new RectF( (int) loc_array.get(0), (int) loc_array.get(1),   (int)loc_array.get(0)+(int)loc_array.get(2), (int)loc_array.get(1)+ (int)loc_array.get(3));
-                            labeledProbability.put((String) plist.get(j),values);
+                        JSONArray confs = (JSONArray)  dlist.get(1);
 
 
-                        }
+                        System.out.println("list of confs");
+                        System.out.println(confs);
+                        Log.e("prob" ,   confs.get(j).toString());
+                        // insert into hashMap
+                        Object [] values = new Object[2];
+                        values[0] = (double ) confs.get(j);
+                        values[1] = new RectF( (int) loc_array.get(0), (int) loc_array.get(1),   (int)loc_array.get(0)+(int)loc_array.get(2), (int)loc_array.get(1)+ (int)loc_array.get(3));
+                        labeledProbability.put((String) plist.get(j),values);
+
+
                     }
-
-
-                    recogListAll.add(getTopKProbabilityWithLocation(labeledProbability));
-
                 }
+
+
+                recogListAll.add(getTopKProbabilityWithLocation(labeledProbability));
+                System.out.println("added "+recogListAll.size());
+
             });
 
             asyncTask.execute(bma);
         }
 
-        return recogListAll;
+        //return recogListAll;
     }
 
     /** Closes the interpreter and model to release resources. */
