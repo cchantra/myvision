@@ -20,14 +20,17 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PointF;
+import android.graphics.RectF;
 
 import com.google.mlkit.vision.demo.GraphicOverlay;
 import com.google.mlkit.vision.demo.GraphicOverlay.Graphic;
+import com.google.mlkit.vision.demo.tflite.Classifier;
 import com.google.mlkit.vision.face.Face;
 import com.google.mlkit.vision.face.FaceContour;
 import com.google.mlkit.vision.face.FaceLandmark;
 import com.google.mlkit.vision.face.FaceLandmark.LandmarkType;
 
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -62,13 +65,19 @@ public class FaceGraphic extends Graphic {
 
     private volatile Face face;
 
-    int id;
+    int id=-1;
+    List<Classifier.Recognition> recogs = null;
 
-    FaceGraphic(GraphicOverlay overlay, Face face, int id) {
+
+    FaceGraphic(GraphicOverlay overlay, Face face, int id, List<Classifier.Recognition> recogs) {
         super(overlay);
 
         this.face = face;
         this.id = id;
+
+        this.recogs = recogs;
+
+
         System.out.println("id " + id);
         final int selectedColor = Color.WHITE;
 
@@ -94,6 +103,9 @@ public class FaceGraphic extends Graphic {
             labelPaints[i].setStyle(Paint.Style.FILL);
         }
     }
+
+
+
 
     /**
      * Draws the face annotations for position on the supplied canvas.
@@ -156,13 +168,26 @@ public class FaceGraphic extends Graphic {
             yLabelOffset += ID_TEXT_SIZE;
         }
 
-        canvas.drawRect(left, top, right, bottom, boxPaints[colorID]);
-        canvas.drawText( String.format("Face: %2d ",id), left, top + yLabelOffset,
-                    idPaints[colorID]);
+      //  if (recogs == null) {
+       //     canvas.drawRect(left, top, right, bottom, boxPaints[colorID]);
+       //     canvas.drawText(String.format("Face: %2d ", id), left, top + yLabelOffset,
+       //             idPaints[colorID]);
+       // }
 
+        if (recogs != null) {
+
+            Classifier.Recognition recog = recogs.get(0);
+            System.out.println("length" + recogs.size());
+            if (recog != null) {
+                RectF location = recog.getLocation();
+                top = location.top; left = location.left; right = location.right; bottom = location.bottom;
+               // canvas.drawRect(left, top, right, bottom, boxPaints[colorID]);
+            }
+        }
 
         canvas.drawRect(left, top, right, bottom, boxPaints[colorID]);
-        System.out.format("....%f %f %f %f \n",left,top,right,bottom);
+        System.out.format("....%f %f %f %f \n", left, top, right, bottom);
+
 
         yLabelOffset += lineHeight;
 
